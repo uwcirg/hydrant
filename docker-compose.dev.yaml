@@ -1,0 +1,8 @@
+---
+version: "3.8"
+services:
+  hydrant:
+    environment:
+      FLASK_APP: "hydrant/app:create_app()"
+      FLASK_ENV: development
+    command: flask run --host 0.0.0.0
