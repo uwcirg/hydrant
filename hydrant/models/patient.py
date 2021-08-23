@@ -23,13 +23,16 @@ class PatientList(object):
 
 class Patient(object):
     """Minimal FHIR like Patient for parsing / uploading """
-    id = 0
-
     def __init__(self):
         self._fields = OrderedDict()
 
     def __repr__(self):
-        return "<Patient %d>" % self.id
+        if 'id' in self._fields:
+            return f"<Patient {self._fields['id']}>"
+        elif 'name' in self._fields:
+            return f"<Patient {self._fields['name']}"
+        else:
+            return f"<Patient>"
 
     def as_fhir(self):
         results = {'resourceType': 'Patient'}
@@ -54,6 +57,8 @@ class Patient(object):
         # Populate instance with available data from adapter / row
         patient = cls()
         for key, value in adapter.items():
+            if not value:
+                continue
             patient._fields[key] = value
 
         return patient
