@@ -13,6 +13,12 @@ def parser_skagit1_csv(datadir):
     return parser
 
 
+@pytest.fixture
+def example_csv(datadir):
+    parser = CSV_Parser(os.path.join(datadir, 'example.csv'))
+    return parser
+
+
 def test_csv_headers(parser_skagit1_csv):
     assert parser_skagit1_csv.headers[:2] == ['Pat Last Name', 'Pat First Name']
     assert not set(SkagitAdapter.headers()).difference(set(parser_skagit1_csv.headers))
@@ -25,3 +31,11 @@ def test_csv_patients(parser_skagit1_csv):
         assert pat.as_fhir()['resourceType'] == 'Patient'
         assert pat.as_fhir()['name']['given'] in (['Barney'], ['Fred'])
         assert isinstance(pat.as_fhir()['birthDate'], datetime)
+
+
+def test_example_patients(example_csv):
+    pl = PatientList(example_csv, SkagitAdapter)
+    assert len(pl.patients()) == 10
+    for patient in pl.patients():
+        fp = patient.as_fhir()
+        assert len(fp['identifier']) == 1
