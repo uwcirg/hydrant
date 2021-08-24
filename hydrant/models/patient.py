@@ -39,6 +39,24 @@ class Patient(object):
         results.update(self._fields)
         return results
 
+    def as_upsert_entry(self):
+        """Generate FHIR for inclusion in transaction bundle
+
+        Transaction bundles need search and method details for
+        FHIR server to perform requested task.
+
+        :returns: JSON snippet to include in transaction bundle
+        """
+        results = {}
+        results['resource'] = self.as_fhir()
+        # TODO look up Patient to see if identifier is found, and if so, PUT
+        # with method=POST, a new will be generated each time.
+        results['request'] = {
+            'method': 'POST',
+            'url': f'Patient?family={self._fields["name"]["family"]}&'
+                   f'given={self._fields["name"]["given"][0]}'}
+        return results
+
     @classmethod
     def factory(cls, data, adapter_cls):
         """Using parser API, pull available Patient fields
