@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import json
 
 from hydrant.models.bundle import Bundle
 from hydrant.models.datetime import parse_datetime
@@ -17,3 +18,5 @@ def test_patient_bundle():
     patient = Patient()
     bundle.add_entry(patient.as_fhir())
     assert bundle.as_fhir()['total'] == 1
+    # Confirm entire bundle is serializable
+    json.dumps(bundle.as_fhir())
