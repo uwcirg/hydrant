@@ -37,7 +37,7 @@ class SkagitAdapter(object):
     def birthDate(self):
         if not self.data['Pat DOB']:
             return
-        return parse_datetime(self.data['Pat DOB'])
+        return parse_datetime(self.data['Pat DOB']).date().isoformat()
 
     def items(self):
         """Performs like a dictionary, returns key, value for known/found attributes"""
