@@ -6,11 +6,10 @@ class Bundle(object):
     """
     template = {
       "resourceType": "Bundle",
-      "id": None,
       "meta": {
-        "lastUpdated": datetime.utcnow()
+        "lastUpdated": datetime.utcnow().isoformat()
       },
-      "type": "searchset",
+      "type": "transaction",
       "total": 0,
     }
 
