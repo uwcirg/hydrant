@@ -30,7 +30,7 @@ def test_csv_patients(parser_skagit1_csv):
     for pat in pl.patients():
         assert pat.as_fhir()['resourceType'] == 'Patient'
         assert pat.as_fhir()['name']['given'] in (['Barney'], ['Fred'])
-        assert isinstance(pat.as_fhir()['birthDate'], datetime)
+        assert isinstance(pat.as_fhir()['birthDate'], str)
 
 
 def test_example_patients(example_csv):
