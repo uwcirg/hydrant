@@ -9,3 +9,10 @@ from the given source to common FHIR Resource types.
 
 Regardless of source, the generated FHIR Bundle prepared is ready for consumption
 by the configured FHIR endpoint
+
+## Usage
+
+Example invocation, using a test file for patient upsert:
+```bash
+flask upload ../tests/test_adapters/example.csv
+```
