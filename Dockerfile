@@ -5,6 +5,7 @@ WORKDIR /opt/app
 COPY requirements.txt .
 RUN pip install --requirement requirements.txt
 
+ENV FLASK_APP=hydrant.wsgi:app
 COPY . .
 
 EXPOSE 5000
