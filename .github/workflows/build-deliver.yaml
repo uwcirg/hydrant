@@ -17,12 +17,11 @@ jobs:
           name: ${{ github.repository }}
           registry: ghcr.io
 
-          # configured at repo settings/secrets
-          # GitHub Username
-          username: ${{ secrets.DOCKER_USERNAME }}
+          # GitHub actor
+          username: ${{ github.actor }}
           
-          # GitHub personal access token
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          # GitHub access token
+          password: ${{ secrets.GITHUB_TOKEN }}
 
           # create docker image tags to match git tags
           tag_names: true
