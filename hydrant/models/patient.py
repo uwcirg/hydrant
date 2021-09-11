@@ -11,7 +11,16 @@ class PatientList(object):
     def _parse(self):
         """Use parser and adapter, build up list of available patients"""
         self.items = []
+        keys_seen = set()
         for row in self.parser.rows():
+            # Adapter may define unique_key() - if defined and a previous
+            # entry matches, skip over this "duplicate"
+            if hasattr(self.adapter, 'unique_key'):
+                key = self.adapter(row).unique_key()
+                if key in keys_seen:
+                    continue
+                keys_seen.add(key)
+
             self.items.append(Patient.factory(row, self.adapter))
 
     def patients(self):

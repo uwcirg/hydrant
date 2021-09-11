@@ -1,3 +1,4 @@
+import json
 from ...models.datetime import parse_datetime
 
 
@@ -46,3 +47,10 @@ class SkagitAdapter(object):
             if value:
                 yield attr, value
 
+    def unique_key(self):
+        """Returns a key value to represent this item as unique
+
+        Defined by adapters wishing to sort out duplicates, used in
+        comparison operators.
+        """
+        return json.dumps([self.name, self.birthDate])
