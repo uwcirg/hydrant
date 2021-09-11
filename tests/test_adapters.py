@@ -19,6 +19,12 @@ def example_csv(datadir):
     return parser
 
 
+@pytest.fixture
+def parser_dups_csv(datadir):
+    parser = CSV_Parser(os.path.join(datadir, 'dups.csv'))
+    return parser
+
+
 def test_csv_headers(parser_skagit1_csv):
     assert parser_skagit1_csv.headers[:2] == ['Pat Last Name', 'Pat First Name']
     assert not set(SkagitAdapter.headers()).difference(set(parser_skagit1_csv.headers))
@@ -39,3 +45,11 @@ def test_example_patients(example_csv):
     for patient in pl.patients():
         fp = patient.as_fhir()
         assert len(fp['identifier']) == 1
+
+
+def test_dups_example(parser_dups_csv):
+    pl = PatientList(parser_dups_csv, SkagitAdapter)
+    assert len(pl.patients()) == 2
+    for patient in pl.patients():
+        fp = patient.as_fhir()
+        assert fp['name']['family'] in ("Potter", "Granger")
