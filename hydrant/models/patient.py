@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import requests
 
 
 class PatientList(object):
@@ -48,22 +49,42 @@ class Patient(object):
         results.update(self._fields)
         return results
 
-    def as_upsert_entry(self):
+    def as_upsert_entry(self, target_system=None):
         """Generate FHIR for inclusion in transaction bundle
 
         Transaction bundles need search and method details for
         FHIR server to perform requested task.
 
+        :param target_system: define to perform lookup for existing
         :returns: JSON snippet to include in transaction bundle
         """
         results = {}
         results['resource'] = self.as_fhir()
-        # TODO look up Patient to see if identifier is found, and if so, PUT
-        # with method=POST, a new will be generated each time.
+        method = 'POST'
+        patient_url = (
+            f'Patient?family={self._fields["name"]["family"]}&'
+            f'given={self._fields["name"]["given"][0]}&'
+            f'birthdate={self._fields["birthdate"]}')
+
+        # Round-trip to see if this represents a new or existing Patient
+        if target_system:
+            response = requests.get(target_system+patient_url)
+            response.raise_for_status()
+
+            # extract Patient.id from bundle
+            bundle = response.json()
+            if bundle['total']:
+                if bundle['total'] > 1:
+                    raise RuntimeError(
+                        "Found multiple matches, can't generate upsert"
+                        f"for {patient_url}")
+                assert bundle['entry'][0]['resource']['resourceType'] == 'Patient'
+                method = 'PUT'
+                patient_url = f"Patient/{bundle['entry'][0]['resource']['id']}"
+
         results['request'] = {
-            'method': 'POST',
-            'url': f'Patient?family={self._fields["name"]["family"]}&'
-                   f'given={self._fields["name"]["given"][0]}'}
+            'method': method,
+            'url': patient_url}
         return results
 
     @classmethod

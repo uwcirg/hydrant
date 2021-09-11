@@ -48,15 +48,14 @@ def upload_file(filename):
         raise click.BadParameter("no appropriate parsers found; can't continue")
 
     # With parser and adapter at hand, process the data
+    target_system = current_app.config['FHIR_SERVER_URL']
     bundle = Bundle()
     patients = PatientList(parser, adapter)
     for p in patients.patients():
-        bundle.add_entry(p.as_upsert_entry())
+        bundle.add_entry(p.as_upsert_entry(target_system))
 
     fhir_bundle = bundle.as_fhir()
     click.echo(f"  - parsed {fhir_bundle['total']} patients")
-
-    target_system = current_app.config['FHIR_SERVER_URL']
     click.echo(f"  - uploading bundle to {target_system}")
 
     response = requests.post(target_system, json=fhir_bundle)
