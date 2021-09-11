@@ -61,10 +61,12 @@ class Patient(object):
         results = {}
         results['resource'] = self.as_fhir()
         method = 'POST'
+
+        # FHIR spec: 'birthDate'; HAPI search: 'birthdate'
         patient_url = (
             f'Patient?family={self._fields["name"]["family"]}&'
             f'given={self._fields["name"]["given"][0]}&'
-            f'birthdate={self._fields["birthdate"]}')
+            f'birthdate={self._fields["birthDate"]}')
 
         # Round-trip to see if this represents a new or existing Patient
         if target_system:
