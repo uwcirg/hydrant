@@ -70,7 +70,7 @@ class Patient(object):
 
         # Round-trip to see if this represents a new or existing Patient
         if target_system:
-            response = requests.get(target_system+patient_url)
+            response = requests.get('/'.join((target_system, patient_url)))
             response.raise_for_status()
 
             # extract Patient.id from bundle
