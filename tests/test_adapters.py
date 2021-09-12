@@ -53,3 +53,4 @@ def test_dups_example(parser_dups_csv):
     for patient in pl.patients():
         fp = patient.as_fhir()
         assert fp['name']['family'] in ("Potter", "Granger")
+        assert fp['birthDate'] in ('1966-01-01', '1972-11-25')

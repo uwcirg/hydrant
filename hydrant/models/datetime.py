@@ -2,12 +2,18 @@ from datetime import datetime
 from flask import current_app
 from dateutil import parser
 
+WRAP_YEAR = 2025
+
 
 def parse_datetime(data, error_subject=None, none_safe=False):
     """Parse input string to generate a UTC datetime instance
 
     NB - date must be more recent than year 1900 or a ValueError
     will be raised.  (library limitation)
+
+    WRAP_YEAR (defined above) is used to determine how a 2 digit
+    year should be treated.  Values below WRAP year are assumed
+    to belong in year 20?? where as values above in 19??.
 
     :param data: the datetime string to parse
     :param error_subject: Subject string to use in error message
@@ -41,4 +47,9 @@ def parse_datetime(data, error_subject=None, none_safe=False):
     epoch = datetime.strptime('1900-01-01', '%Y-%m-%d')
     if dt < epoch:
         raise ValueError("Dates prior to year 1900 not supported")
+
+    # Correct for python's inappropriate WRAP_YEAR of '69
+    if dt.year > WRAP_YEAR:
+        dt = dt.replace(year=dt.year-100)
+
     return dt
