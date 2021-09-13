@@ -9,3 +9,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # URL scheme to use outside of request context
 PREFERRED_URL_SCHEME = os.getenv("PREFERRED_URL_SCHEME", 'http')
 FHIR_SERVER_URL = os.getenv('FHIR_SERVER_URL')
+
+LOGSERVER_TOKEN = os.getenv('LOGSERVER_TOKEN')
+LOGSERVER_URL = os.getenv('LOGSERVER_URL')
