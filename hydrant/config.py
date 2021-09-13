@@ -12,3 +12,6 @@ FHIR_SERVER_URL = os.getenv('FHIR_SERVER_URL')
 
 LOGSERVER_TOKEN = os.getenv('LOGSERVER_TOKEN')
 LOGSERVER_URL = os.getenv('LOGSERVER_URL')
+
+# NB log level hardcoded at INFO for logserver
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG').upper()
