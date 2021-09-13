@@ -89,11 +89,14 @@ def upload_file(filename):
     fhir_bundle = bundle.as_fhir()
     click.echo(f"  - parsed {fhir_bundle['total']} patients")
     click.echo(f"  - uploading bundle to {target_system}")
-    current_app.logger.info(f"attempt to upload {fhir_bundle['total']} patients from {filename}")
+    extra = {'tags': ['patient', 'upload'], 'user': 'system'}
+    current_app.logger.info(
+        f"attempt to upload {fhir_bundle['total']} patients from {filename}",
+        extra=extra)
 
     response = requests.post(target_system, json=fhir_bundle)
     click.echo(f"  - response status {response.status_code}")
-    current_app.logger.info(f"uploaded: {response.json()}")
+    current_app.logger.info(f"uploaded: {response.json()}", extra=extra)
 
     if response.status_code != 200:
         raise click.BadParameter(response.text)
