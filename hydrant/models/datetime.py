@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import current_app
 from dateutil import parser
 
-WRAP_YEAR = 2025
+WRAP_YEAR = 2022
 
 
 def parse_datetime(data, error_subject=None, none_safe=False):
