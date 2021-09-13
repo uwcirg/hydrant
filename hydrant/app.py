@@ -41,7 +41,7 @@ def configure_logging(app):
     log_server_handler.setFormatter(json_formatter)
 
     app.logger.addHandler(log_server_handler)
-    app.logger.debug("hydrant logging initialized", extra={'tags': ['testing', 'logging']})
+    app.logger.info("hydrant logging initialized", extra={'tags': ['testing', 'logging']})
 
 
 def configure_proxy(app):
