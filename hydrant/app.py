@@ -28,6 +28,8 @@ def register_blueprints(app):
 
 
 def configure_logging(app):
+    app.logger.setLevel(getattr(logging, app.config['LOG_LEVEL'].upper()))
+
     if not app.config['LOGSERVER_URL']:
         return
 
