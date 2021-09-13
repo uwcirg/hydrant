@@ -63,14 +63,16 @@ class Patient(object):
         method = 'POST'
 
         # FHIR spec: 'birthDate'; HAPI search: 'birthdate'
-        patient_url = (
-            f'Patient?family={self._fields["name"]["family"]}&'
-            f'given={self._fields["name"]["given"][0]}&'
-            f'birthdate={self._fields["birthDate"]}')
+        patient_url = "Patient"
+        search_params = {
+            "family": self._fields["name"]["family"],
+            "given": self._fields["name"]["given"][0],
+            "birthdate": self._fields["birthDate"],
+        }
 
         # Round-trip to see if this represents a new or existing Patient
         if target_system:
-            response = requests.get('/'.join((target_system, patient_url)))
+            response = requests.get('/'.join((target_system, patient_url)), params=search_params)
             response.raise_for_status()
 
             # extract Patient.id from bundle
