@@ -72,7 +72,8 @@ class Patient(object):
 
         # Round-trip to see if this represents a new or existing Patient
         if target_system:
-            response = requests.get('/'.join((target_system, patient_url)), params=search_params)
+            headers = {'Cache-Control': 'no-cache'}
+            response = requests.get('/'.join((target_system, patient_url)), params=search_params, headers=headers)
             response.raise_for_status()
 
             # extract Patient.id from bundle
