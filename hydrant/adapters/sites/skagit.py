@@ -13,7 +13,7 @@ class SkagitAdapter(object):
             'Pat Last Name',
             'Pat First Name',
             'Pat DOB',
-            'Written by Prov First Name'
+            #'Written by Prov First Name'
         ]
 
     def __init__(self, parsed_row):
