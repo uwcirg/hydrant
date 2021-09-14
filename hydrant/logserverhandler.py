@@ -23,6 +23,6 @@ class LogServerHandler(logging.Handler):
             response = requests.post(url=self.url, headers=headers, json=log_entry)
             response.raise_for_status()
         except RequestException as ex:
-            # bootstrap problems - attemtp to log to root logger
+            # bootstrap problems - attempt to log to root logger
             root_logger = logging.getLogger('root')
             root_logger.exception(ex)
