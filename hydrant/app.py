@@ -34,7 +34,6 @@ def configure_logging(app):
         return
 
     log_server_handler = LogServerHandler(
-        level=logging.INFO,
         jwt=app.config['LOGSERVER_TOKEN'],
         url=app.config['LOGSERVER_URL'])
 

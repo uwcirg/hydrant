@@ -7,8 +7,8 @@ from requests.exceptions import RequestException
 class LogServerHandler(logging.Handler):
     """Specialized logging handler capable of nesting json and passing auth"""
 
-    def __init__(self, url, jwt, level):
-        super().__init__(level)
+    def __init__(self, url, jwt):
+        super().__init__()
         self.jwt = jwt
         self.url = f"{url}/events"
 
