@@ -1,3 +1,5 @@
+import logging
+
 import click
 from flask import Blueprint, abort, current_app, jsonify
 from flask.json import JSONEncoder
@@ -91,12 +93,13 @@ def upload_file(filename):
     click.echo(f"  - uploading bundle to {target_system}")
     extra = {'tags': ['patient', 'upload'], 'user': 'system'}
     current_app.logger.info(
-        f"attempt to upload {fhir_bundle['total']} patients from {filename}",
+        f"upload {fhir_bundle['total']} patients from {filename}",
         extra=extra)
 
     response = requests.post(target_system, json=fhir_bundle)
     click.echo(f"  - response status {response.status_code}")
-    current_app.logger.info(f"uploaded: {response.json()}", extra=extra)
+    event_logger = logging.getLogger("event_logger")
+    event_logger.info(f"uploaded: {response.json()}", extra=extra)
 
     if response.status_code != 200:
         raise click.BadParameter(response.text)

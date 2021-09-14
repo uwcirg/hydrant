@@ -1,6 +1,7 @@
 import json
-import logging.handlers
+import logging
 import requests
+from requests.exceptions import RequestException
 
 
 class LogServerHandler(logging.Handler):
@@ -18,4 +19,10 @@ class LogServerHandler(logging.Handler):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.jwt}"
         }
-        return requests.post(url=self.url, headers=headers, json=log_entry)
+        try:
+            response = requests.post(url=self.url, headers=headers, json=log_entry)
+            response.raise_for_status()
+        except RequestException as ex:
+            # bootstrap problems - attempt to log to root logger
+            root_logger = logging.getLogger('root')
+            root_logger.exception(ex)

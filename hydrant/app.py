@@ -42,8 +42,11 @@ def configure_logging(app):
         "%(asctime)s %(name)s %(levelname)s %(message)s")
     log_server_handler.setFormatter(json_formatter)
 
-    app.logger.addHandler(log_server_handler)
-    app.logger.debug("hydrant logging initialized", extra={'tags': ['testing', 'logging']})
+    event_logger = logging.getLogger("event_logger")
+    event_logger.setLevel(logging.INFO)
+    event_logger.addHandler(log_server_handler)
+    app.logger.debug("hydrant <app> logging initialized", extra={'tags': ['testing', 'logging', 'app']})
+    event_logger.info("hydrant <event> logging initialized", extra={'tags': ['testing', 'logging', 'events']})
 
 
 def configure_proxy(app):
