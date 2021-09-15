@@ -1,5 +1,6 @@
 import json
 import logging
+from pythonjsonlogger.jsonlogger import JsonFormatter
 import requests
 from requests.exceptions import RequestException
 
@@ -11,6 +12,8 @@ class LogServerHandler(logging.Handler):
         super().__init__()
         self.jwt = jwt
         self.url = f"{url}/events"
+        self.setFormatter(JsonFormatter(
+            "%(asctime)s %(name)s %(levelname)s %(message)s"))
 
     def emit(self, record):
         log_entry = self.format(record)
