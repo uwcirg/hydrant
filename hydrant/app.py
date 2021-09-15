@@ -3,6 +3,7 @@ import logging
 from pythonjsonlogger.jsonlogger import JsonFormatter
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from hydrant.audit import audit_log_init, audit_entry
 from hydrant.views import base_blueprint
 from hydrant.logserverhandler import LogServerHandler
 
@@ -29,23 +30,17 @@ def register_blueprints(app):
 
 def configure_logging(app):
     app.logger.setLevel(getattr(logging, app.config['LOG_LEVEL'].upper()))
+    app.logger.debug(
+        "hydrant logging initialized",
+        extra={'tags': ['testing', 'logging', 'app']})
 
     if not app.config['LOGSERVER_URL']:
         return
 
-    log_server_handler = LogServerHandler(
-        jwt=app.config['LOGSERVER_TOKEN'],
-        url=app.config['LOGSERVER_URL'])
-
-    json_formatter = JsonFormatter(
-        "%(asctime)s %(name)s %(levelname)s %(message)s")
-    log_server_handler.setFormatter(json_formatter)
-
-    event_logger = logging.getLogger("event_logger")
-    event_logger.setLevel(logging.INFO)
-    event_logger.addHandler(log_server_handler)
-    app.logger.debug("hydrant <app> logging initialized", extra={'tags': ['testing', 'logging', 'app']})
-    event_logger.info("hydrant <event> logging initialized", extra={'tags': ['testing', 'logging', 'events']})
+    audit_log_init(app)
+    audit_entry(
+        "hydrant <event> logging initialized",
+        extra={'tags': ['testing', 'logging', 'events']})
 
 
 def configure_proxy(app):

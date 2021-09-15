@@ -1,10 +1,9 @@
-import logging
-
 import click
 from flask import Blueprint, abort, current_app, jsonify
 from flask.json import JSONEncoder
 import requests
 
+from hydrant.audit import audit_entry
 from hydrant.models.bundle import Bundle
 from hydrant.models.patient import PatientList
 
@@ -98,8 +97,7 @@ def upload_file(filename):
 
     response = requests.post(target_system, json=fhir_bundle)
     click.echo(f"  - response status {response.status_code}")
-    event_logger = logging.getLogger("event_logger")
-    event_logger.info(f"uploaded: {response.json()}", extra=extra)
+    audit_entry(f"uploaded: {response.json()}", extra=extra)
 
     if response.status_code != 200:
         raise click.BadParameter(response.text)
