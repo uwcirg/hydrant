@@ -65,12 +65,12 @@ def upload_file(filename):
     parser, adapter = None, None
     if filename.endswith('csv'):
         from hydrant.adapters.csv import CSV_Parser
-        from hydrant.adapters.sites.skagit import SkagitAdapter
+        from hydrant.adapters.sites.skagit import SkagitAdapter, SkagitServiceRequestAdapter
         parser = CSV_Parser(filename)
         headers = set(parser.headers)
 
         # sniff out the site adapter from the header values
-        for site_adapter in (SkagitAdapter,):
+        for site_adapter in (SkagitAdapter, SkagitServiceRequestAdapter):
             if not set(site_adapter.headers()).difference(headers):
                 if adapter:
                     raise click.BadParameter("column headers match multiple adapters")
@@ -85,7 +85,7 @@ def upload_file(filename):
     bundle = Bundle()
     patients = PatientList(parser, adapter)
     for p in patients.patients():
-        bundle.add_entry(p.as_upsert_entry(target_system))
+        bundle.add_entry(p.as_upsert_entry())
 
     fhir_bundle = bundle.as_fhir()
     click.echo(f"  - parsed {fhir_bundle['total']} patients")

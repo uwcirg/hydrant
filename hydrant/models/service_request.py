@@ -1,19 +1,16 @@
 from collections import OrderedDict
 import requests
-from urllib.parse import urlencode
-
-from hydrant.config import FHIR_SERVER_URL
 
 
-class PatientList(object):
-    """Like a factory, used to build a list of patients via parser"""
+class ServiceRequestList(object):
+    """Like a factory, used to build a list of ServiceRequests via parser"""
     def __init__(self, parser, adapter):
         self.parser = parser
         self.adapter = adapter
         self.items = None
 
     def _parse(self):
-        """Use parser and adapter, build up list of available patients"""
+        """Use parser and adapter, build up list of ServiceRequests"""
         self.items = []
         keys_seen = set()
         for row in self.parser.rows():
@@ -25,59 +22,56 @@ class PatientList(object):
                     continue
                 keys_seen.add(key)
 
-            self.items.append(Patient.factory(row, self.adapter))
+            self.items.append(ServiceRequest.factory(row, self.adapter))
 
-    def patients(self):
+    def __iter__(self):
         if self.items is None:
             self._parse()
 
-        return self.items
+        for i in self.items:
+            yield i
 
 
-class Patient(object):
-    """Minimal FHIR like Patient for parsing / uploading """
-    def __init__(self, name=None, birthDate=None):
+class ServiceRequest(object):
+    """Minimal FHIR like ServiceRequest for parsing / uploading """
+    def __init__(self):
         self._fields = OrderedDict()
-        if name:
-            self._fields['name'] = name
-        if birthDate:
-            self._fields['birthDate'] = birthDate
-        self._id = None
 
     def __repr__(self):
-        if self._id is not None:
-            return f"<Patient {self._id}>"
-        elif 'name' in self._fields:
-            return f"<Patient {self._fields['name']}"
-        else:
-            return f"<Patient>"
+        if 'id' in self._fields:
+            return f"<ServiceRequest {self._fields['id']}>"
+        return f"<ServiceRequest>"
 
-    def search_url(self):
-        """Generate the request path search url for Patient
+    def as_fhir(self):
+        results = {'resourceType': 'ServiceRequest'}
+        results.update(self._fields)
+        return results
 
-        NB - this method does NOT invoke a round trip ID lookup.
-        Call self.id() beforehand to force a lookup.
+    def as_upsert_entry(self, target_system=None):
+        """Generate FHIR for inclusion in transaction bundle
+
+        Transaction bundles need search and method details for
+        FHIR server to perform requested task.
+
+        :param target_system: define to perform lookup for existing
+        :returns: JSON snippet to include in transaction bundle
         """
-        if self._id:
-            return f"Patient/{id}"
+        results = {}
+        results['resource'] = self.as_fhir()
+        method = 'POST'
 
         # FHIR spec: 'birthDate'; HAPI search: 'birthdate'
+        patient_url = "Patient"
         search_params = {
             "family": self._fields["name"]["family"],
             "given": self._fields["name"]["given"][0],
             "birthdate": self._fields["birthDate"],
         }
-        return f"Patient/?{urlencode(search_params)}"
-
-    def id(self):
-        """Look up FHIR id or return None if not found"""
-        if self._id is not None:
-            return self._id
 
         # Round-trip to see if this represents a new or existing Patient
-        if FHIR_SERVER_URL:
+        if target_system:
             headers = {'Cache-Control': 'no-cache'}
-            response = requests.get('/'.join((FHIR_SERVER_URL, self.search_url())), headers=headers)
+            response = requests.get('/'.join((target_system, patient_url)), params=search_params, headers=headers)
             response.raise_for_status()
 
             # extract Patient.id from bundle
@@ -86,29 +80,14 @@ class Patient(object):
                 if bundle['total'] > 1:
                     raise RuntimeError(
                         "Found multiple matches, can't generate upsert"
-                        f"for {self.search_url()}")
+                        f"for {patient_url}")
                 assert bundle['entry'][0]['resource']['resourceType'] == 'Patient'
-                self._id = bundle['entry'][0]['resource']['id']
-        return self._id
+                method = 'PUT'
+                patient_url = f"Patient/{bundle['entry'][0]['resource']['id']}"
 
-    def as_fhir(self):
-        results = {'resourceType': 'Patient'}
-        results.update(self._fields)
-        return results
-
-    def as_upsert_entry(self):
-        """Generate FHIR for inclusion in transaction bundle
-
-        Transaction bundles need search and method details for
-        FHIR server to perform requested task.
-
-        :returns: JSON snippet to include in transaction bundle
-        """
-        results = {
-            'resource': self.as_fhir(),
-            'request': {
-                'method': "PUT" if self.id() else "POST",
-                'url': self.search_url()}}
+        results['request'] = {
+            'method': method,
+            'url': patient_url}
         return results
 
     @classmethod

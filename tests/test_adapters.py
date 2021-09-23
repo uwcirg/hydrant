@@ -3,13 +3,20 @@ import pytest
 import os
 
 from hydrant.adapters.csv import CSV_Parser
-from hydrant.adapters.sites.skagit import SkagitAdapter
+from hydrant.adapters.sites.skagit import SkagitAdapter, SkagitServiceRequestAdapter
 from hydrant.models.patient import PatientList
+from hydrant.models.service_request import ServiceRequestList
 
 
 @pytest.fixture
 def parser_skagit1_csv(datadir):
     parser = CSV_Parser(os.path.join(datadir, 'skagit1.csv'))
+    return parser
+
+
+@pytest.fixture
+def skagit_service_requests(datadir):
+    parser = CSV_Parser(os.path.join(datadir, 'skagit_service_requests.csv'))
     return parser
 
 
@@ -54,3 +61,12 @@ def test_dups_example(parser_dups_csv):
         fp = patient.as_fhir()
         assert fp['name']['family'] in ("Potter", "Granger")
         assert fp['birthDate'] in ('1966-01-01', '1972-11-25')
+
+
+def test_skagit_service_requests(skagit_service_requests):
+    srl = ServiceRequestList(skagit_service_requests, SkagitServiceRequestAdapter)
+    for sr in srl:
+        f = sr.as_fhir()
+        assert f['code'] == {'coding': [{
+            'code': '733727',
+            'system': SkagitServiceRequestAdapter.SITE_CODING_SYSTEM}]}
