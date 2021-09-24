@@ -1,115 +1,27 @@
-from collections import OrderedDict
-import requests
+from urllib.parse import urlencode
+
+from hydrant.models.resource import Resource
 
 
-class ServiceRequestList(object):
-    """Like a factory, used to build a list of ServiceRequests via parser"""
-    def __init__(self, parser, adapter):
-        self.parser = parser
-        self.adapter = adapter
-        self.items = None
-
-    def _parse(self):
-        """Use parser and adapter, build up list of ServiceRequests"""
-        self.items = []
-        keys_seen = set()
-        for row in self.parser.rows():
-            # Adapter may define unique_key() - if defined and a previous
-            # entry matches, skip over this "duplicate"
-            if hasattr(self.adapter, 'unique_key'):
-                key = self.adapter(row).unique_key()
-                if key in keys_seen:
-                    continue
-                keys_seen.add(key)
-
-            self.items.append(ServiceRequest.factory(row, self.adapter))
-
-    def __iter__(self):
-        if self.items is None:
-            self._parse()
-
-        for i in self.items:
-            yield i
-
-
-class ServiceRequest(object):
+class ServiceRequest(Resource):
     """Minimal FHIR like ServiceRequest for parsing / uploading """
+    RESOURCE_TYPE = 'ServiceRequest'
+
     def __init__(self):
-        self._fields = OrderedDict()
+        super().__init__()
 
-    def __repr__(self):
-        if 'id' in self._fields:
-            return f"<ServiceRequest {self._fields['id']}>"
-        return f"<ServiceRequest>"
+    def search_url(self):
+        """Generate the request path search url for ServiceRequest
 
-    def as_fhir(self):
-        results = {'resourceType': 'ServiceRequest'}
-        results.update(self._fields)
-        return results
-
-    def as_upsert_entry(self, target_system=None):
-        """Generate FHIR for inclusion in transaction bundle
-
-        Transaction bundles need search and method details for
-        FHIR server to perform requested task.
-
-        :param target_system: define to perform lookup for existing
-        :returns: JSON snippet to include in transaction bundle
+        NB - this method does NOT invoke a round trip ID lookup.
+        Call self.id() beforehand to force a lookup.
         """
-        results = {}
-        results['resource'] = self.as_fhir()
-        method = 'POST'
+        if self._id:
+            return f"{self.RESOURCE_TYPE}/{id}"
 
-        # FHIR spec: 'birthDate'; HAPI search: 'birthdate'
-        patient_url = "Patient"
         search_params = {
-            "family": self._fields["name"]["family"],
-            "given": self._fields["name"]["given"][0],
-            "birthdate": self._fields["birthDate"],
+            "subject": self._fields["subject"],
+            "code": self._fields["code"],
+            "authoredOn": self._fields["authoredOn"],
         }
-
-        # Round-trip to see if this represents a new or existing Patient
-        if target_system:
-            headers = {'Cache-Control': 'no-cache'}
-            response = requests.get('/'.join((target_system, patient_url)), params=search_params, headers=headers)
-            response.raise_for_status()
-
-            # extract Patient.id from bundle
-            bundle = response.json()
-            if bundle['total']:
-                if bundle['total'] > 1:
-                    raise RuntimeError(
-                        "Found multiple matches, can't generate upsert"
-                        f"for {patient_url}")
-                assert bundle['entry'][0]['resource']['resourceType'] == 'Patient'
-                method = 'PUT'
-                patient_url = f"Patient/{bundle['entry'][0]['resource']['id']}"
-
-        results['request'] = {
-            'method': method,
-            'url': patient_url}
-        return results
-
-    @classmethod
-    def factory(cls, data, adapter_cls):
-        """Using parser API, pull available Patient fields
-
-        :param data: single `row` of data, from parsed file or db
-        :param adapter_cls: class to be instantiated on `data` with
-          accessor methods to obtain patient attributes from given
-          format.
-
-        :returns: populated Patient instance, from parsed data
-        """
-
-        # Use given adapter to parse "row" data
-        adapter = adapter_cls(data)
-
-        # Populate instance with available data from adapter / row
-        patient = cls()
-        for key, value in adapter.items():
-            if not value:
-                continue
-            patient._fields[key] = value
-
-        return patient
+        return f"{self.RESOURCE_TYPE}/?{urlencode(search_params)}"

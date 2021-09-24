@@ -1,10 +1,12 @@
 import json
 from hydrant.models.datetime import parse_datetime
 from hydrant.models.patient import Patient
+from hydrant.models.service_request import ServiceRequest
 
 
-class SkagitAdapter(object):
+class SkagitPatientAdapter(object):
     """Specialized site adapter for skagit site exports"""
+    RESOURCE_CLASS = Patient
     SITE_SYSTEM = "SKAGIT"
 
     @classmethod
@@ -24,7 +26,7 @@ class SkagitAdapter(object):
     def identifier(self):
         """If parsed data include MRN, add a site specific identifier"""
         if 'Pat MRN' in self.data:
-            ident = {"system": SkagitAdapter.SITE_SYSTEM, "value": self.data['Pat MRN']}
+            ident = {"system": SkagitPatientAdapter.SITE_SYSTEM, "value": self.data['Pat MRN']}
             # FHIR keeps lists of identifiers, return as list
             return [ident]
 
@@ -59,6 +61,7 @@ class SkagitAdapter(object):
 
 class SkagitServiceRequestAdapter(object):
     """Specialized site adapter for skagit site service request exports"""
+    RESOURCE_CLASS = ServiceRequest
     SITE_CODING_SYSTEM = "http://hl7.org/fhir/sid/icd-9"
 
     @classmethod
@@ -103,12 +106,12 @@ class SkagitServiceRequestAdapter(object):
         return {"reference": patient.search_url()}
 
     @property
-    def occurrenceDateTime(self):
+    def authoredOn(self):
         return parse_datetime(self.data['Specimen Date']).isoformat()
 
     def items(self):
         """Performs like a dictionary, returns key, value for known/found attributes"""
-        for attr in ('subject', 'code', 'occurrenceDateTime'):
+        for attr in ('subject', 'code', 'authoredOn'):
             value = getattr(self, attr, None)
             if value:
                 yield attr, value
@@ -119,4 +122,4 @@ class SkagitServiceRequestAdapter(object):
         Defined by adapters wishing to sort out duplicates, used in
         comparison operators.
         """
-        return json.dumps([self.subject, self.code, self.occurrenceDateTime])
+        return json.dumps([self.subject, self.code, self.authoredOn])
