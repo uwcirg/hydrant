@@ -17,7 +17,7 @@ class ServiceRequest(Resource):
         Call self.id() beforehand to force a lookup.
         """
         if self._id:
-            return f"{self.RESOURCE_TYPE}/{id}"
+            return f"{self.RESOURCE_TYPE}/{self._id}"
 
         first_code = self._fields['code']['coding'][0]
         search_params = {
