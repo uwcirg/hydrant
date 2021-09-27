@@ -58,6 +58,7 @@ def test_service_request():
     f = svc_req.as_fhir()
     assert(f['subject'] == {'reference': 'Patient/9'})
     assert(f['code']) == codeable_concept
+    assert(f['authoredOn'] == '2021-09-27')
 
     # for HAPI search URL - subject points directly to id and code is '|' together
     s = svc_req.search_url()
@@ -67,4 +68,4 @@ def test_service_request():
     qs = parse_qs(parsed.query)
     assert(qs['subject'] == ['Patient/9'])
     assert(qs['code'] == ['http://loinc.org|chicken'])
-    assert(qs['authoredOn'] == ['2021-09-27'])
+    assert(qs['authored'] == ['2021-09-27'])

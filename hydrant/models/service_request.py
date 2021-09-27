@@ -23,6 +23,6 @@ class ServiceRequest(Resource):
         search_params = {
             "subject": self._fields["subject"]["reference"],
             "code": '|'.join((first_code["system"], first_code["code"])),
-            "authoredOn": self._fields["authoredOn"],
+            "authored": self._fields["authoredOn"],
         }
         return f"{self.RESOURCE_TYPE}/?{urlencode(search_params)}"
