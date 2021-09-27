@@ -80,6 +80,7 @@ class SkagitServiceRequestAdapter(object):
 
     @property
     def name(self):
+        """Parsed and used to locate `subject` reference"""
         return {
             "family": self.data['Pat Last Name'],
             "given": [self.data['Pat First Name']]
@@ -87,6 +88,7 @@ class SkagitServiceRequestAdapter(object):
 
     @property
     def birthDate(self):
+        """Parsed and used to locate `subject` reference"""
         if not self.data['Pat DOB']:
             return
         return parse_datetime(self.data['Pat DOB']).date().isoformat()
