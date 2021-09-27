@@ -21,7 +21,7 @@ class Patient(Resource):
         Call self.id() beforehand to force a lookup.
         """
         if self._id:
-            return f"{self.RESOURCE_TYPE}/{id}"
+            return f"{self.RESOURCE_TYPE}/{self._id}"
 
         # FHIR spec: 'birthDate'; HAPI search: 'birthdate'
         search_params = {
