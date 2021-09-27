@@ -8,7 +8,7 @@ class ResourceList(object):
         self.items = None
 
     def _parse(self):
-        """Use parser and adapter, build up list of available patients"""
+        """Use parser and adapter, build up list of available resources"""
         self.items = []
         keys_seen = set()
         for row in self.parser.rows():
