@@ -5,7 +5,6 @@ import requests
 
 from hydrant.audit import audit_entry
 from hydrant.models.bundle import Bundle
-from hydrant.models.patient import PatientList
 
 base_blueprint = Blueprint('base', __name__, cli_group=None)
 
@@ -65,12 +64,14 @@ def upload_file(filename):
     parser, adapter = None, None
     if filename.endswith('csv'):
         from hydrant.adapters.csv import CSV_Parser
-        from hydrant.adapters.sites.skagit import SkagitAdapter
+        from hydrant.adapters.sites.skagit import SkagitPatientAdapter, SkagitServiceRequestAdapter
+        from hydrant.models.resource_list import ResourceList
+
         parser = CSV_Parser(filename)
         headers = set(parser.headers)
 
         # sniff out the site adapter from the header values
-        for site_adapter in (SkagitAdapter,):
+        for site_adapter in (SkagitPatientAdapter, SkagitServiceRequestAdapter):
             if not set(site_adapter.headers()).difference(headers):
                 if adapter:
                     raise click.BadParameter("column headers match multiple adapters")
@@ -83,16 +84,17 @@ def upload_file(filename):
     # With parser and adapter at hand, process the data
     target_system = current_app.config['FHIR_SERVER_URL']
     bundle = Bundle()
-    patients = PatientList(parser, adapter)
-    for p in patients.patients():
-        bundle.add_entry(p.as_upsert_entry(target_system))
+    resources = ResourceList(parser, adapter)
+
+    for r in resources:
+        bundle.add_entry(r.as_upsert_entry())
 
     fhir_bundle = bundle.as_fhir()
-    click.echo(f"  - parsed {fhir_bundle['total']} patients")
+    click.echo(f"  - parsed {fhir_bundle['total']}")
     click.echo(f"  - uploading bundle to {target_system}")
-    extra = {'tags': ['patient', 'upload'], 'user': 'system'}
+    extra = {'tags': [adapter.RESOURCE_CLASS.RESOURCE_TYPE, 'upload'], 'user': 'system'}
     current_app.logger.info(
-        f"upload {fhir_bundle['total']} patients from {filename}",
+        f"upload {fhir_bundle['total']} from {filename}",
         extra=extra)
 
     response = requests.post(target_system, json=fhir_bundle)
