@@ -19,9 +19,10 @@ class ServiceRequest(Resource):
         if self._id:
             return f"{self.RESOURCE_TYPE}/{id}"
 
+        first_code = self._fields['code']['coding'][0]
         search_params = {
-            "subject": self._fields["subject"],
-            "code": self._fields["code"],
+            "subject": self._fields["subject"]["reference"],
+            "code": '|'.join((first_code["system"], first_code["code"])),
             "authoredOn": self._fields["authoredOn"],
         }
         return f"{self.RESOURCE_TYPE}/?{urlencode(search_params)}"
