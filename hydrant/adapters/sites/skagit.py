@@ -62,7 +62,7 @@ class SkagitPatientAdapter(object):
 class SkagitServiceRequestAdapter(object):
     """Specialized site adapter for skagit site service request exports"""
     RESOURCE_CLASS = ServiceRequest
-    SITE_CODING_SYSTEM = "http://hl7.org/fhir/sid/icd-9"
+    SITE_CODING_SYSTEM = "http://loinc.org"
 
     @classmethod
     def headers(cls):
