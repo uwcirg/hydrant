@@ -2,8 +2,15 @@ import pytest
 import os
 
 from hydrant.adapters.csv import CSV_Parser
+from hydrant.adapters.sites.kent import KentPatientAdapter
 from hydrant.adapters.sites.skagit import SkagitPatientAdapter, SkagitServiceRequestAdapter
 from hydrant.models.resource_list import ResourceList
+
+
+@pytest.fixture
+def parser_kent1_csv(datadir):
+    parser = CSV_Parser(os.path.join(datadir, 'kent1.csv'))
+    return parser
 
 
 @pytest.fixture
@@ -41,6 +48,17 @@ def test_csv_patients(parser_skagit1_csv):
     for pat in pl:
         assert pat.as_fhir()['resourceType'] == 'Patient'
         assert pat.as_fhir()['name']['given'] in (['Barney'], ['Fred'])
+        assert isinstance(pat.as_fhir()['birthDate'], str)
+
+
+def test_kent_patients(parser_kent1_csv):
+    pl = ResourceList(parser_kent1_csv, KentPatientAdapter)
+    assert len(pl) == 1
+    for pat in pl:
+        f = pat.as_fhir()
+        assert f['resourceType'] == 'Patient'
+        assert f['name']['family'] == 'Aabb'
+        assert f['name']['given'] == ['Cccddee']
         assert isinstance(pat.as_fhir()['birthDate'], str)
 
 
