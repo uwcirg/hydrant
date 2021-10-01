@@ -69,7 +69,7 @@ class SkagitServiceRequestAdapter(object):
         """Return minimal expected header values - extras ignored"""
         return [
             'Test Code Ordered',
-            'Ordered Date',
+            'Order Date',
             'Pat Last Name',
             'Pat First Name',
             'Pat DOB',
@@ -109,7 +109,7 @@ class SkagitServiceRequestAdapter(object):
 
     @property
     def authoredOn(self):
-        return parse_datetime(self.data['Ordered Date']).isoformat()
+        return parse_datetime(self.data['Order Date']).isoformat()
 
     def items(self):
         """Performs like a dictionary, returns key, value for known/found attributes"""
