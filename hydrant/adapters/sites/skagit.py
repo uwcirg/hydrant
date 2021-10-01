@@ -62,14 +62,14 @@ class SkagitPatientAdapter(object):
 class SkagitServiceRequestAdapter(object):
     """Specialized site adapter for skagit site service request exports"""
     RESOURCE_CLASS = ServiceRequest
-    SITE_CODING_SYSTEM = "http://hl7.org/fhir/sid/icd-9"
+    SITE_CODING_SYSTEM = "http://loinc.org"
 
     @classmethod
     def headers(cls):
         """Return minimal expected header values - extras ignored"""
         return [
             'Test Code Ordered',
-            'Specimen Date',
+            'Ordered Date',
             'Pat Last Name',
             'Pat First Name',
             'Pat DOB',
@@ -109,7 +109,7 @@ class SkagitServiceRequestAdapter(object):
 
     @property
     def authoredOn(self):
-        return parse_datetime(self.data['Specimen Date']).isoformat()
+        return parse_datetime(self.data['Ordered Date']).isoformat()
 
     def items(self):
         """Performs like a dictionary, returns key, value for known/found attributes"""

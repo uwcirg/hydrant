@@ -63,6 +63,7 @@ def test_dups_example(parser_dups_csv):
 
 def test_skagit_service_requests(skagit_service_requests):
     srl = ResourceList(skagit_service_requests, SkagitServiceRequestAdapter)
+    assert len(srl) == 5
     for sr in srl:
         f = sr.as_fhir()
         assert f['code'] == {'coding': [{
