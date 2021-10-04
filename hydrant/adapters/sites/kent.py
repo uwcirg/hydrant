@@ -15,7 +15,7 @@ class KentPatientAdapter(object):
             'Patient Last Name',
             'Patient First Name',
             'Patient DOB',
-            'Patient Account No'
+            'Patient Acct No'
         ]
 
     def __init__(self, parsed_row):
