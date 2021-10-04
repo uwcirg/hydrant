@@ -64,6 +64,7 @@ def upload_file(filename):
     parser, adapter = None, None
     if filename.endswith('csv'):
         from hydrant.adapters.csv import CSV_Parser
+        from hydrant.adapters.sites.kent import KentPatientAdapter
         from hydrant.adapters.sites.skagit import SkagitPatientAdapter, SkagitServiceRequestAdapter
         from hydrant.models.resource_list import ResourceList
 
@@ -71,7 +72,7 @@ def upload_file(filename):
         headers = set(parser.headers)
 
         # sniff out the site adapter from the header values
-        for site_adapter in (SkagitPatientAdapter, SkagitServiceRequestAdapter):
+        for site_adapter in (KentPatientAdapter, SkagitPatientAdapter, SkagitServiceRequestAdapter):
             if not set(site_adapter.headers()).difference(headers):
                 if adapter:
                     raise click.BadParameter("column headers match multiple adapters")
