@@ -16,3 +16,11 @@ Example invocation, using a test file for patient upsert:
 ```bash
 flask upload ../tests/test_adapters/example.csv
 ```
+
+## Supported FHIR Resource Types
+
+- Patient
+- ServiceRequest
+- Condition (pending)
+- Medication (pending)
+
