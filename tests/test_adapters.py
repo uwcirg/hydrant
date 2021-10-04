@@ -51,6 +51,14 @@ def test_csv_patients(parser_skagit1_csv):
         assert isinstance(pat.as_fhir()['birthDate'], str)
 
 
+def test_service_request_headers(skagit_service_requests):
+    assert not set(SkagitServiceRequestAdapter.headers()).difference(set(skagit_service_requests.headers))
+
+
+def test_kent_headers(parser_kent1_csv):
+    assert not set(KentPatientAdapter.headers()).difference(set(parser_kent1_csv.headers))
+
+
 def test_kent_patients(parser_kent1_csv):
     pl = ResourceList(parser_kent1_csv, KentPatientAdapter)
     assert len(pl) == 1
