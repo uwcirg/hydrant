@@ -4,6 +4,34 @@ from hydrant.models.patient import Patient
 from hydrant.models.service_request import ServiceRequest
 
 
+def labcorp_code_lookup(labcorp_code):
+    """Sites such as Skagit send all labs to Labcorp - lookup keyed values
+
+    Given flat CSV files, need to map a code from a known lab system to
+    a FHIR Service Request.
+
+    Extend with additional codes as needed.  Look up values at top of
+    an existing page such as:
+    https://www.labcorp.com/tests/733727/pain-management-screening-profile-11-drugs-urine-pmp-11s
+
+    :returns: dict of `text` and `code` for use in ServiceRequest
+    """
+    results = {'code': {'coding': [
+        {'system': "https://www.labcorp.com/tests",
+         'code': labcorp_code}
+    ]}}
+
+    if int(labcorp_code) == 733727:
+        results['code']['coding'][0]['display'] = '10+Oxycodone+Crt-Scr'
+        results['text'] = "Pain Management Screening Profile (11 Drugs), Urine (PMP-11S)"
+    elif int(labcorp_code) == 763824:
+        results['code']['coding'][0]['display'] = '12+Oxycodone+Crt-Unbund'
+        results['text'] = "Pain Management Profile (13 Drugs), Urine (PMP-13)"
+    else:
+        raise ValueError(f"Unmapped labcorp code {labcorp_code}")
+    return results
+
+
 class SkagitPatientAdapter(object):
     """Specialized site adapter for skagit site exports"""
     RESOURCE_CLASS = Patient
@@ -62,7 +90,6 @@ class SkagitPatientAdapter(object):
 class SkagitServiceRequestAdapter(object):
     """Specialized site adapter for skagit site service request exports"""
     RESOURCE_CLASS = ServiceRequest
-    SITE_CODING_SYSTEM = "http://loinc.org"
 
     @classmethod
     def headers(cls):
@@ -95,10 +122,7 @@ class SkagitServiceRequestAdapter(object):
 
     @property
     def code(self):
-        return {'coding': [
-            {'system': self.SITE_CODING_SYSTEM,
-             'code': self.data['Test Code Ordered']}
-        ]}
+        return labcorp_code_lookup(self.data['Test Code Ordered'])['code']
 
     @property
     def subject(self):
@@ -108,12 +132,16 @@ class SkagitServiceRequestAdapter(object):
         return {"reference": patient.search_url()}
 
     @property
+    def text(self):
+        return labcorp_code_lookup(self.data['Test Code Ordered'])['text']
+
+    @property
     def authoredOn(self):
         return parse_datetime(self.data['Order Date']).isoformat()
 
     def items(self):
         """Performs like a dictionary, returns key, value for known/found attributes"""
-        for attr in ('subject', 'code', 'authoredOn'):
+        for attr in ('subject', 'code', 'text', 'authoredOn'):
             value = getattr(self, attr, None)
             if value:
                 yield attr, value
