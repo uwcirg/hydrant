@@ -92,6 +92,9 @@ def test_skagit_service_requests(skagit_service_requests):
     assert len(srl) == 5
     for sr in srl:
         f = sr.as_fhir()
-        assert f['code'] == {'coding': [{
-            'code': '733727',
-            'system': SkagitServiceRequestAdapter.SITE_CODING_SYSTEM}]}
+        assert f['code'] == {
+            'coding': [{
+                'code': '733727',
+                'display': '10+Oxycodone+Crt-Scr',
+                'system': 'https://www.labcorp.com/tests'}],
+            'text': 'Pain Management Screening Profile (11 Drugs), Urine (PMP-11S)'}
