@@ -16,16 +16,16 @@ def labcorp_code_lookup(labcorp_code):
 
     :returns: dict of `text` and `code` for use in ServiceRequest
     """
-    results = {'code': {'coding': [
+    results = {'coding': [
         {'system': "https://www.labcorp.com/tests",
          'code': labcorp_code}
-    ]}}
+    ]}
 
     if int(labcorp_code) == 733727:
-        results['code']['coding'][0]['display'] = '10+Oxycodone+Crt-Scr'
+        results['coding'][0]['display'] = '10+Oxycodone+Crt-Scr'
         results['text'] = "Pain Management Screening Profile (11 Drugs), Urine (PMP-11S)"
     elif int(labcorp_code) == 763824:
-        results['code']['coding'][0]['display'] = '12+Oxycodone+Crt-Unbund'
+        results['coding'][0]['display'] = '12+Oxycodone+Crt-Unbund'
         results['text'] = "Pain Management Profile (13 Drugs), Urine (PMP-13)"
     else:
         raise ValueError(f"Unmapped labcorp code {labcorp_code}")
@@ -122,7 +122,7 @@ class SkagitServiceRequestAdapter(object):
 
     @property
     def code(self):
-        return labcorp_code_lookup(self.data['Test Code Ordered'])['code']
+        return labcorp_code_lookup(self.data['Test Code Ordered'])
 
     @property
     def subject(self):
@@ -132,16 +132,12 @@ class SkagitServiceRequestAdapter(object):
         return {"reference": patient.search_url()}
 
     @property
-    def text(self):
-        return labcorp_code_lookup(self.data['Test Code Ordered'])['text']
-
-    @property
     def authoredOn(self):
         return parse_datetime(self.data['Order Date']).isoformat()
 
     def items(self):
         """Performs like a dictionary, returns key, value for known/found attributes"""
-        for attr in ('subject', 'code', 'text', 'authoredOn'):
+        for attr in ('subject', 'code', 'authoredOn'):
             value = getattr(self, attr, None)
             if value:
                 yield attr, value
