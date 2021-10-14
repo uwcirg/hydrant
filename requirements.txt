@@ -12,6 +12,7 @@ gunicorn==20.1.0          # via hydrant (setup.py)
 idna==2.10                # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.11.2            # via flask
+jmespath==0.10.0          # via hydrant (setup.py)
 markupsafe==1.1.1         # via jinja2
 python-dateutil==2.8.0    # via hydrant (setup.py)
 python-json-logger==0.1.11  # via hydrant (setup.py)

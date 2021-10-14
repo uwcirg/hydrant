@@ -1,3 +1,5 @@
+from collections import OrderedDict
+import jmespath
 import json
 from hydrant.models.datetime import parse_datetime
 from hydrant.models.patient import Patient
@@ -38,17 +40,31 @@ class SkagitPatientAdapter(object):
     SITE_SYSTEM = "SKAGIT"
 
     @classmethod
+    def col_headers_to_fhir_paths(cls):
+        """Return minimal expected CSV (column headers: json path) in FHIR - extras ignored"""
+        return OrderedDict([
+            ('Pat Last Name', 'name[0].family'),
+            ('Pat First Name', 'name[0].given[0]'),
+            ('Pat DOB', 'birthDate'),
+            ('Written by Prov First Name', 'generalPractitioner')
+        ])
+
+    @classmethod
     def headers(cls):
         """Return minimal expected header values - extras ignored"""
-        return [
-            'Pat Last Name',
-            'Pat First Name',
-            'Pat DOB',
-            'Written by Prov First Name'
-        ]
+        return cls.col_headers_to_fhir_paths().keys()
 
     def __init__(self, parsed_row):
         self.data = parsed_row
+
+    def from_resource(self, resource):
+        """Generate class data from FHIR resource form (as opposed to parsing)"""
+        assert resource['resourceType'] == self.RESOURCE_CLASS.RESOURCE_TYPE
+        results = []
+        for json_path in self.col_headers_to_fhir_paths().values():
+            value = jmespath.search(json_path, resource) or ""
+            results.append(value)
+        return results
 
     @property
     def identifier(self):

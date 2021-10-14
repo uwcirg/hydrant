@@ -1,7 +1,10 @@
 import click
 from flask import Blueprint, abort, current_app, jsonify
 from flask.json import JSONEncoder
+import jmespath
+import importlib
 import requests
+import sys
 
 from hydrant.audit import audit_entry
 from hydrant.models.bundle import Bundle
@@ -43,6 +46,57 @@ def config_settings(config_key):
         config_settings[key] = current_app.config.get(key)
 
     return jsonify(config_settings)
+
+
+@base_blueprint.cli.command("export")
+@click.argument("adapter")
+@click.option("--filter", help="HAPI FHIR filter parameters")
+def export(adapter, filter):
+    """Export data using the named adapter
+
+    Named adapter knows how to connect to data source and format for export
+    """
+    from hydrant.adapters.csv import CSV_Serializer
+
+    # attempt to load adapter class from configured modules
+    m1 = importlib.import_module('hydrant.adapters.sites.kent')
+    m2 = importlib.import_module('hydrant.adapters.sites.skagit')
+    adapter_class = None
+    for module in m1, m2:
+        if hasattr(module, adapter):
+            adapter_class = getattr(module, adapter)
+
+    if not adapter_class:
+        raise click.BadParameter(f"Adapter class not found: {adapter}")
+
+    # Pull resources from backing store and generate export via adapter class
+    target_system = current_app.config['FHIR_SERVER_URL']
+    search_url = '/'.join((target_system, adapter_class.RESOURCE_CLASS.RESOURCE_TYPE))
+    if filter:
+        search_url = '?'.join((search_url, filter))
+    response = requests.get(search_url)
+    bundle = response.json()
+    assert bundle['resourceType'] == 'Bundle'
+    serializer = CSV_Serializer(sys.stdout)
+    serializer.headers(adapter_class.headers())
+
+    # Bundle will potentially include pages of results
+    total = 0
+    while True:
+        for entry in bundle['entry']:
+            item = adapter_class(parsed_row=None)
+            serializer.add_row(item.from_resource(entry['resource']))
+            total += 1
+        serializer.flush()
+        next_page_link = jmespath.search('link[?relation==`next`].{url: url}', bundle)
+        if not next_page_link:
+            break
+        response = requests.get(next_page_link[0]['url'])
+        bundle = response.json()
+
+    # Write to stderr so as to not pollute output file
+    click.echo(f"Exported {total} {adapter_class.RESOURCE_CLASS.RESOURCE_TYPE}s", err=True)
+
 
 
 @base_blueprint.cli.command("upload")
