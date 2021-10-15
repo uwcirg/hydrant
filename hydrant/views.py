@@ -83,6 +83,9 @@ def export(adapter, filter):
     # Bundle will potentially include pages of results
     total = 0
     while True:
+        if 'entry' not in bundle:
+            break
+
         for entry in bundle['entry']:
             item = adapter_class(parsed_row=None)
             serializer.add_row(item.from_resource(entry['resource']))
