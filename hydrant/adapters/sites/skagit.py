@@ -144,7 +144,10 @@ class SkagitServiceRequestAdapter(object):
     def subject(self):
         # Look up matching patient
         patient = Patient(name=self.name, birthDate=self.birthDate)
-        patient.id()  # force round trip lookup
+
+        # force round trip lookup - can't continue w/o a known patient
+        if patient.id() is None:
+            raise ValueError(f"Request to add ServiceRequest for non existing {patient.search_url()}")
         return {"reference": patient.search_url()}
 
     @property

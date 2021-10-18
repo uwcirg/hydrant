@@ -87,6 +87,7 @@ def test_dups_example(parser_dups_csv):
         assert fp['birthDate'] in ('1966-01-01', '1972-11-25')
 
 
+@pytest.mark.skip(reason="lack ability to mock patients in HAPI")
 def test_skagit_service_requests(skagit_service_requests):
     srl = ResourceList(skagit_service_requests, SkagitServiceRequestAdapter)
     assert len(srl) == 5
