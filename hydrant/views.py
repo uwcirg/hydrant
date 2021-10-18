@@ -101,7 +101,6 @@ def export(adapter, filter):
     click.echo(f"Exported {total} {adapter_class.RESOURCE_CLASS.RESOURCE_TYPE}s", err=True)
 
 
-
 @base_blueprint.cli.command("upload")
 @click.argument("filename")
 def upload_file(filename):
