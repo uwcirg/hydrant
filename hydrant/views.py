@@ -2,6 +2,7 @@ import click
 from flask import Blueprint, abort, current_app, jsonify
 from flask.json import JSONEncoder
 import jmespath
+from json import JSONDecodeError
 import importlib
 import requests
 import sys
@@ -75,7 +76,11 @@ def export(adapter, filter):
     if filter:
         search_url = '?'.join((search_url, filter))
     response = requests.get(search_url)
-    bundle = response.json()
+    try:
+        bundle = response.json()
+    except JSONDecodeError as jde:
+        raise click.UsageError(f"{response.status_code} FROM {search_url} - {response.text}")
+
     assert bundle['resourceType'] == 'Bundle'
     serializer = CSV_Serializer(sys.stdout)
     serializer.headers(adapter_class.headers())
