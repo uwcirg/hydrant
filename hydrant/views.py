@@ -78,7 +78,7 @@ def export(adapter, filter):
     response = requests.get(search_url)
     try:
         bundle = response.json()
-    except JSONDecodeError as jde:
+    except JSONDecodeError:
         raise click.UsageError(f"{response.status_code} FROM {search_url} - {response.text}")
 
     assert bundle['resourceType'] == 'Bundle'
@@ -99,8 +99,26 @@ def export(adapter, filter):
         next_page_link = jmespath.search('link[?relation==`next`].{url: url}', bundle)
         if not next_page_link:
             break
-        response = requests.get(next_page_link[0]['url'])
-        bundle = response.json()
+
+        # HAPI server config uses a `dashboard` protected URL, which we can't write to.
+        #   see: https://github.com/uwcirg/cosri-environments/pull/56
+        # correct server portion of `next` to configured `FHIR_SERVER_URL`,
+        # relying on `/fhir` request path in both
+        expected_request_path_base = '/fhir'
+        assert target_system.endswith(expected_request_path_base)
+        if next_page_link[0]['url'].count(expected_request_path_base) != 1:
+            raise ValueError(
+                f"missing expected request path {expected_request_path_base} "
+                f"in next page url {next_page_link[0]['url']}")
+
+        _, requestpath = next_page_link[0]['url'].split(expected_request_path_base)
+        next_url = target_system + requestpath
+
+        try:
+            response = requests.get(next_url)
+            bundle = response.json()
+        except JSONDecodeError:
+            raise click.UsageError(f"{response.status_code} FROM {next_url} - {response.text}")
 
     # Write to stderr so as to not pollute output file
     click.echo(f"Exported {total} {adapter_class.RESOURCE_CLASS.RESOURCE_TYPE}s", err=True)
