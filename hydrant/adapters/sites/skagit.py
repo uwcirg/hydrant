@@ -2,6 +2,10 @@ from collections import OrderedDict
 import jmespath
 import json
 from hydrant.models.datetime import parse_datetime
+from hydrant.models.document_reference import (
+    CONTROLLED_SUBSTANCE_AGREEMENT_CODE,
+    DocumentReference,
+)
 from hydrant.models.patient import Patient
 from hydrant.models.service_request import ServiceRequest
 
@@ -103,6 +107,72 @@ class SkagitPatientAdapter(object):
         return json.dumps([self.name, self.birthDate])
 
 
+class SkagitControlledSubstanceAgreementAdapter(object):
+    """Specialized site adapter for skagit site controlled substance agreement dates"""
+    RESOURCE_CLASS = DocumentReference
+
+    @classmethod
+    def headers(cls):
+        """Return minimal expected header values - extras ignored"""
+        return [
+            'Controlled Substance Agreement Date',
+            'Pat Last Name',
+            'Pat First Name',
+            'Pat DOB',
+        ]
+
+    def __init__(self, parsed_row):
+        self.data = parsed_row
+
+    @property
+    def name(self):
+        """Parsed and used to locate `subject` reference"""
+        return {
+            "family": self.data['Pat Last Name'],
+            "given": [self.data['Pat First Name']]
+            }
+
+    @property
+    def birthDate(self):
+        """Parsed and used to locate `subject` reference"""
+        if not self.data['Pat DOB']:
+            return
+        return parse_datetime(self.data['Pat DOB']).date().isoformat()
+
+    @property
+    def type(self):
+        return {'coding': [CONTROLLED_SUBSTANCE_AGREEMENT_CODE]}
+
+    @property
+    def subject(self):
+        # Look up matching patient
+        patient = Patient(name=self.name, birthDate=self.birthDate)
+
+        # force round trip lookup - can't continue w/o a known patient
+        if patient.id() is None:
+            raise ValueError(f"Request to add {self.RESOURCE_CLASS} for non existing {patient.search_url()}")
+        return {"reference": patient.search_url()}
+
+    @property
+    def date(self):
+        return parse_datetime(self.data['Controlled Substance Agreement Date']).isoformat()
+
+    def items(self):
+        """Performs like a dictionary, returns key, value for known/found attributes"""
+        for attr in ('subject', 'type', 'date'):
+            value = getattr(self, attr, None)
+            if value:
+                yield attr, value
+
+    def unique_key(self):
+        """Returns a key value to represent this item as unique
+
+        Defined by adapters wishing to sort out duplicates, used in
+        comparison operators.
+        """
+        return json.dumps([self.subject, self.type, self.date])
+
+
 class SkagitServiceRequestAdapter(object):
     """Specialized site adapter for skagit site service request exports"""
     RESOURCE_CLASS = ServiceRequest
@@ -147,7 +217,7 @@ class SkagitServiceRequestAdapter(object):
 
         # force round trip lookup - can't continue w/o a known patient
         if patient.id() is None:
-            raise ValueError(f"Request to add ServiceRequest for non existing {patient.search_url()}")
+            raise ValueError(f"Request to add {self.RESOURCE_CLASS} for non existing {patient.search_url()}")
         return {"reference": patient.search_url()}
 
     @property
