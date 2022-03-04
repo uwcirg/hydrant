@@ -52,7 +52,7 @@ def get_events(db_con):
     with db_con.cursor() as cursor:
         cursor.execute(
             "SELECT user_id, session_id, event_time, type, details_json "
-            " FROM event_entity LIMIT 20")
+            " FROM event_entity")
         for row in cursor:
             yield {
                 "user_id": row[0],
