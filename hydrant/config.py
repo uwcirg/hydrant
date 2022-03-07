@@ -10,6 +10,14 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 PREFERRED_URL_SCHEME = os.getenv("PREFERRED_URL_SCHEME", 'http')
 FHIR_SERVER_URL = os.getenv('FHIR_SERVER_URL')
 
+# Used to access keycloak db for event log extraction
+DB_VENDOR = os.getenv("DB_VENDOR", "postgres")
+DB_ADDR = os.getenv("DB_ADDR", "db")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_DATABASE = os.getenv("DB_DATABASE", "keycloak")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+
 LOGSERVER_TOKEN = os.getenv('LOGSERVER_TOKEN')
 LOGSERVER_URL = os.getenv('LOGSERVER_URL')
 

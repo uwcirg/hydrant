@@ -193,3 +193,11 @@ def upload_file(filename):
         raise click.BadParameter(response.text)
 
     click.echo("upload complete")
+
+
+
+@base_blueprint.cli.command("kc_logs")
+def kc_logs():
+    import json
+    from hydrant.models.kc_log_extractor import dump_events
+    click.echo(json.dumps(dump_events(), indent=2))
