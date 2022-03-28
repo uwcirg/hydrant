@@ -143,6 +143,7 @@ def upload_file(filename):
     parser, adapter = None, None
     if filename.endswith('csv'):
         from hydrant.adapters.csv import CSV_Parser
+        from hydrant.adapters.sites.dawg import DawgPatientAdapter
         from hydrant.adapters.sites.kent import KentPatientAdapter
         from hydrant.adapters.sites.skagit import (
             SkagitControlledSubstanceAgreementAdapter,
@@ -156,6 +157,7 @@ def upload_file(filename):
 
         # sniff out the site adapter from the header values
         for site_adapter in (
+                DawgPatientAdapter,
                 KentPatientAdapter,
                 SkagitPatientAdapter,
                 SkagitControlledSubstanceAgreementAdapter,
