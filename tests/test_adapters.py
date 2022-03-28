@@ -2,9 +2,16 @@ import pytest
 import os
 
 from hydrant.adapters.csv import CSV_Parser
+from hydrant.adapters.sites.dawg import DawgPatientAdapter
 from hydrant.adapters.sites.kent import KentPatientAdapter
 from hydrant.adapters.sites.skagit import SkagitPatientAdapter, SkagitServiceRequestAdapter
 from hydrant.models.resource_list import ResourceList
+
+
+@pytest.fixture
+def parser_dawg_csv(datadir):
+    parser = CSV_Parser(os.path.join(datadir, 'dawg.csv'))
+    return parser
 
 
 @pytest.fixture
@@ -53,6 +60,17 @@ def test_csv_patients(parser_skagit1_csv):
 
 def test_service_request_headers(skagit_service_requests):
     assert not set(SkagitServiceRequestAdapter.headers()).difference(set(skagit_service_requests.headers))
+
+
+def test_dawg_patients(parser_dawg_csv):
+    pl = ResourceList(parser_dawg_csv, DawgPatientAdapter)
+    assert len(pl) == 2
+    for pat in pl:
+        f = pat.as_fhir()
+        assert f['resourceType'] == 'Patient'
+        assert f['name']['family'] in ("Shy", "Rod-Pod")
+        assert f['name']['given'] in (['Guy'], ['Marmar'])
+        assert isinstance(pat.as_fhir()['birthDate'], str)
 
 
 def test_kent_headers(parser_kent1_csv):
