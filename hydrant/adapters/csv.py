@@ -31,6 +31,7 @@ class CSV_Parser(object):
     def __init__(self, filepath):
         self.filepath = filepath
         self._headers = None
+        self.csv_dialect = None
 
     @property
     def headers(self):
@@ -38,12 +39,18 @@ class CSV_Parser(object):
             return self._headers
 
         with open(self.filepath, 'r') as csv_file:
-            reader = csv.DictReader(csv_file)
+            if not self.csv_dialect:
+                self.csv_dialect = csv.Sniffer().sniff(csv_file.read(1024))
+                csv_file.seek(0)
+            reader = csv.DictReader(csv_file, dialect=self.csv_dialect)
             self._headers = [field for field in reader.fieldnames]
         return self._headers
 
     def rows(self):
         with open(self.filepath, 'r') as csv_file:
-            reader = csv.DictReader(csv_file)
+            if not self.csv_dialect:
+                self.csv_dialect = csv.Sniffer().sniff(csv_file.read(1024))
+                csv_file.seek(0)
+            reader = csv.DictReader(csv_file, dialect=self.csv_dialect)
             for row in reader:
                 yield row
