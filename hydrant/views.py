@@ -140,36 +140,32 @@ def upload_file(filename):
 
     # Locate best parser and adapter
     # TODO: move this process to factory methods
-    parser, adapter = None, None
-    if filename.endswith('csv'):
-        from hydrant.adapters.csv import CSV_Parser
-        from hydrant.adapters.sites.dawg import DawgPatientAdapter
-        from hydrant.adapters.sites.kent import KentPatientAdapter
-        from hydrant.adapters.sites.skagit import (
-            SkagitControlledSubstanceAgreementAdapter,
+    from hydrant.adapters.csv import CSV_Parser
+    from hydrant.adapters.sites.dawg import DawgPatientAdapter
+    from hydrant.adapters.sites.kent import KentPatientAdapter
+    from hydrant.adapters.sites.skagit import (
+        SkagitControlledSubstanceAgreementAdapter,
+        SkagitPatientAdapter,
+        SkagitServiceRequestAdapter,
+    )
+    from hydrant.models.resource_list import ResourceList
+
+    parser = CSV_Parser(filename)
+    headers = set(parser.headers)
+
+    # sniff out the site adapter from the header values
+    for site_adapter in (
+            DawgPatientAdapter,
+            KentPatientAdapter,
             SkagitPatientAdapter,
-            SkagitServiceRequestAdapter,
-        )
-        from hydrant.models.resource_list import ResourceList
-
-        parser = CSV_Parser(filename)
-        headers = set(parser.headers)
-
-        # sniff out the site adapter from the header values
-        for site_adapter in (
-                DawgPatientAdapter,
-                KentPatientAdapter,
-                SkagitPatientAdapter,
-                SkagitControlledSubstanceAgreementAdapter,
-                SkagitServiceRequestAdapter):
-            if not set(site_adapter.headers()).difference(headers):
-                if adapter:
-                    raise click.BadParameter("column headers match multiple adapters")
-                adapter = site_adapter
-        if not adapter:
-            raise click.BadParameter("column headers not found in any available adapters")
-    else:
-        raise click.BadParameter("no appropriate parsers found; can't continue")
+            SkagitControlledSubstanceAgreementAdapter,
+            SkagitServiceRequestAdapter):
+        if not set(site_adapter.headers()).difference(headers):
+            if adapter:
+                raise click.BadParameter("column headers match multiple adapters")
+            adapter = site_adapter
+    if not adapter:
+        raise click.BadParameter("column headers not found in any available adapters")
 
     # With parser and adapter at hand, process the data
     target_system = current_app.config['FHIR_SERVER_URL']
@@ -195,7 +191,6 @@ def upload_file(filename):
         raise click.BadParameter(response.text)
 
     click.echo("upload complete")
-
 
 
 @base_blueprint.cli.command("kc_logs")
