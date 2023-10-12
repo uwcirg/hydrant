@@ -2,7 +2,7 @@ import logging
 
 
 class ResourceList(object):
-    """Holds (ordered) list of FHIR Resources"""
+    """Generates unique FHIR Resources from given parser / adapter"""
 
     def __init__(self, parser, adapter):
         self.parser = parser
