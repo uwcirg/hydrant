@@ -51,11 +51,11 @@ def test_csv_headers(parser_skagit1_csv):
 
 def test_csv_patients(parser_skagit1_csv):
     pl = ResourceList(parser_skagit1_csv, SkagitPatientAdapter)
-    assert len(pl) == 2
     for pat in pl:
         assert pat.as_fhir()['resourceType'] == 'Patient'
         assert pat.as_fhir()['name']['given'] in (['Barney'], ['Fred'])
         assert isinstance(pat.as_fhir()['birthDate'], str)
+    assert len(pl) == 2
 
 
 def test_service_request_headers(skagit_service_requests):
@@ -64,13 +64,13 @@ def test_service_request_headers(skagit_service_requests):
 
 def test_dawg_patients(parser_dawg_csv):
     pl = ResourceList(parser_dawg_csv, DawgPatientAdapter)
-    assert len(pl) == 2
     for pat in pl:
         f = pat.as_fhir()
         assert f['resourceType'] == 'Patient'
         assert f['name']['family'] in ("Shy", "Rod-Pod")
         assert f['name']['given'] in (['Guy'], ['Marmar'])
         assert isinstance(pat.as_fhir()['birthDate'], str)
+    assert len(pl) == 2
 
 
 def test_kent_headers(parser_kent1_csv):
@@ -79,30 +79,30 @@ def test_kent_headers(parser_kent1_csv):
 
 def test_kent_patients(parser_kent1_csv):
     pl = ResourceList(parser_kent1_csv, KentPatientAdapter)
-    assert len(pl) == 1
     for pat in pl:
         f = pat.as_fhir()
         assert f['resourceType'] == 'Patient'
         assert f['name']['family'] == 'Aabb'
         assert f['name']['given'] == ['Cccddee']
         assert isinstance(pat.as_fhir()['birthDate'], str)
+    assert len(pl) == 1
 
 
 def test_example_patients(example_csv):
     pl = ResourceList(example_csv, SkagitPatientAdapter)
-    assert len(pl) == 10
     for patient in pl:
         fp = patient.as_fhir()
         assert len(fp['identifier']) == 1
+    assert len(pl) == 10
 
 
 def test_dups_example(parser_dups_csv):
     pl = ResourceList(parser_dups_csv, SkagitPatientAdapter)
-    assert len(pl) == 2
     for patient in pl:
         fp = patient.as_fhir()
         assert fp['name']['family'] in ("Potter", "Granger")
         assert fp['birthDate'] in ('1966-01-01', '1972-11-25')
+    assert len(pl) == 2
 
 
 @pytest.mark.skip(reason="lack ability to mock patients in HAPI")

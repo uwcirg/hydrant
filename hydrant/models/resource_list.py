@@ -1,3 +1,5 @@
+import logging
+
 
 class ResourceList(object):
     """Holds (ordered) list of FHIR Resources"""
@@ -5,11 +7,11 @@ class ResourceList(object):
     def __init__(self, parser, adapter):
         self.parser = parser
         self.adapter = adapter
-        self.items = None
+        self.item_count = 0
+        self._iteration_complete = False
 
-    def _parse(self):
-        """Use parser and adapter, build up list of available resources"""
-        self.items = []
+    def __iter__(self):
+        """Use parser and adapter, yield each unique resource"""
         keys_seen = set()
         for row in self.parser.rows():
             # Adapter may define unique_key() - if defined and a previous
@@ -17,20 +19,21 @@ class ResourceList(object):
             if hasattr(self.adapter, 'unique_key'):
                 key = self.adapter(row).unique_key()
                 if key in keys_seen:
+                    logging.info("skipping duplicate: {key}")
                     continue
                 keys_seen.add(key)
 
-            self.items.append(self.adapter.RESOURCE_CLASS.factory(row, self.adapter))
-
-    def __iter__(self):
-        if self.items is None:
-            self._parse()
-
-        for i in self.items:
-            yield i
+            self.item_count += 1
+            yield self.adapter.RESOURCE_CLASS.factory(row, self.adapter)
+        self._iteration_complete = True
 
     def __len__(self):
-        if self.items is None:
-            self._parse()
+        """Return length (count) of unique resources discovered in generator
 
-        return len(self.items) if self.items else 0
+        NB: as a generator class, the full length is only known after iteration
+        has been exhausted.  Therefore, this raises if iteration hasn't yet
+        occurred.
+        """
+        if not self._iteration_complete:
+            raise RuntimeError("request for generator length before complete iteration")
+        return self.item_count
