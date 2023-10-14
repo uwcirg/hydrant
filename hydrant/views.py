@@ -172,7 +172,7 @@ def upload_file(filename):
     batcher = BatchUpload(target_system=current_app.config['FHIR_SERVER_URL'])
     batcher.process(resources)
 
-    click.echo(f"  - parsed {resources.len()}")
+    click.echo(f"  - parsed {len(resources)}")
     click.echo(f"  - uploaded {batcher.total_sent}")
     click.echo("upload complete")
 
