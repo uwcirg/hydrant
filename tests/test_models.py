@@ -16,12 +16,27 @@ from hydrant.models.service_request import ServiceRequest
 @pytest.fixture
 def mock_patient():
     # Generate a mock patient for tests
-    name = {'family': 'Brown', 'given': ['Charlie']}
+    name = {'family': 'Brown', 'given': ['Charlie Jr']}
     dob = "1948-05-30"
 
     patient = Patient(name=name, birthDate=dob)
     patient._id = '9'
     return patient
+
+
+def test_patient_params(mock_patient):
+    from urllib.parse import parse_qs, urlparse
+    # clear id to test search by unique fields
+    mock_patient._id = None
+
+    url = mock_patient.search_url()
+    # before using libs to decode, confirm white space correctly quoted
+    assert "%20" in url
+
+    parsed = urlparse(url)
+    qs = parse_qs(parsed.query)
+    assert 'family' in qs
+    assert qs['given'][0] == mock_patient._fields["name"]["given"][0]
 
 
 def test_date_parse():
