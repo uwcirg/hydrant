@@ -91,7 +91,7 @@ class BatchUpload(object):
         response.raise_for_status()
         self.total_sent += len(self.bundle)
         extra = {'tags': ['upload'], 'system': self.target_system, 'user': 'system'}
-        audit_entry(f"uploaded: {response.json()}", extra)
+        audit_entry(f"uploaded: {response.json()}", extra=extra)
 
         # reset internal state for next bundle
         self.bundle = Bundle()
