@@ -7,8 +7,7 @@ import importlib
 import requests
 import sys
 
-from hydrant.audit import audit_entry
-from hydrant.models.bundle import Bundle
+from hydrant.models.bundle import BatchUpload
 
 base_blueprint = Blueprint('base', __name__, cli_group=None)
 
@@ -140,62 +139,42 @@ def upload_file(filename):
 
     # Locate best parser and adapter
     # TODO: move this process to factory methods
-    parser, adapter = None, None
-    if filename.endswith('csv'):
-        from hydrant.adapters.csv import CSV_Parser
-        from hydrant.adapters.sites.dawg import DawgPatientAdapter
-        from hydrant.adapters.sites.kent import KentPatientAdapter
-        from hydrant.adapters.sites.skagit import (
-            SkagitControlledSubstanceAgreementAdapter,
+    from hydrant.adapters.csv import CSV_Parser
+    from hydrant.adapters.sites.dawg import DawgPatientAdapter
+    from hydrant.adapters.sites.kent import KentPatientAdapter
+    from hydrant.adapters.sites.skagit import (
+        SkagitControlledSubstanceAgreementAdapter,
+        SkagitPatientAdapter,
+        SkagitServiceRequestAdapter,
+    )
+    from hydrant.models.resource_list import ResourceList
+
+    adapter = None
+    parser = CSV_Parser(filename)
+    headers = set(parser.headers)
+
+    # sniff out the site adapter from the header values
+    for site_adapter in (
+            DawgPatientAdapter,
+            KentPatientAdapter,
             SkagitPatientAdapter,
-            SkagitServiceRequestAdapter,
-        )
-        from hydrant.models.resource_list import ResourceList
+            SkagitControlledSubstanceAgreementAdapter,
+            SkagitServiceRequestAdapter):
+        if not set(site_adapter.headers()).difference(headers):
+            if adapter:
+                raise click.BadParameter("column headers match multiple adapters")
+            adapter = site_adapter
+    if not adapter:
+        raise click.BadParameter("column headers not found in any available adapters")
 
-        parser = CSV_Parser(filename)
-        headers = set(parser.headers)
-
-        # sniff out the site adapter from the header values
-        for site_adapter in (
-                DawgPatientAdapter,
-                KentPatientAdapter,
-                SkagitPatientAdapter,
-                SkagitControlledSubstanceAgreementAdapter,
-                SkagitServiceRequestAdapter):
-            if not set(site_adapter.headers()).difference(headers):
-                if adapter:
-                    raise click.BadParameter("column headers match multiple adapters")
-                adapter = site_adapter
-        if not adapter:
-            raise click.BadParameter("column headers not found in any available adapters")
-    else:
-        raise click.BadParameter("no appropriate parsers found; can't continue")
-
-    # With parser and adapter at hand, process the data
-    target_system = current_app.config['FHIR_SERVER_URL']
-    bundle = Bundle()
+    # With parser and adapter at hand, process & upload the data
     resources = ResourceList(parser, adapter)
+    batcher = BatchUpload(target_system=current_app.config['FHIR_SERVER_URL'])
+    batcher.process(resources)
 
-    for r in resources:
-        bundle.add_entry(r.as_upsert_entry())
-
-    fhir_bundle = bundle.as_fhir()
-    click.echo(f"  - parsed {fhir_bundle['total']}")
-    click.echo(f"  - uploading bundle to {target_system}")
-    extra = {'tags': [adapter.RESOURCE_CLASS.RESOURCE_TYPE, 'upload'], 'user': 'system'}
-    current_app.logger.info(
-        f"upload {fhir_bundle['total']} from {filename}",
-        extra=extra)
-
-    response = requests.post(target_system, json=fhir_bundle)
-    click.echo(f"  - response status {response.status_code}")
-    audit_entry(f"uploaded: {response.json()}", extra=extra)
-
-    if response.status_code != 200:
-        raise click.BadParameter(response.text)
-
+    click.echo(f"  - parsed {len(resources)}")
+    click.echo(f"  - uploaded {batcher.total_sent}")
     click.echo("upload complete")
-
 
 
 @base_blueprint.cli.command("kc_logs")

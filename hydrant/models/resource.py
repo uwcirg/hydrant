@@ -55,7 +55,9 @@ class Resource(object):
         results = {
             'resource': self.as_fhir(),
             'request': {
-                'method': "PUT" if self.id() else "POST",
+                # with conditional updates, always use "PUT"
+                # 'method': "PUT" if self.id() else "POST",
+                'method': "PUT",
                 'url': self.search_url()}}
         return results
 

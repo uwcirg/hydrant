@@ -1,4 +1,8 @@
+import logging
 from datetime import datetime
+import requests
+
+from hydrant.audit import audit_entry
 
 
 class Bundle(object):
@@ -26,6 +30,9 @@ class Bundle(object):
         self.bundle_type = bundle_type
         self.link = link or []
 
+    def __len__(self):
+        return len(self.entries)
+
     def add_entry(self, entry_or_resource):
         """Add entry to bundle
 
@@ -52,3 +59,39 @@ class Bundle(object):
         results.update({'entry': self.entries})
         results.update({'total': len(self.entries)})
         return results
+
+
+class BatchUpload(object):
+    """Upload a series of Bundles"""
+
+    def __init__(self, target_system, batch_size=20):
+        self.bundle = Bundle()
+        self.target_system = target_system
+        self.batch_size = batch_size
+        self.total_sent = 0
+
+    def add_entry(self, item):
+        self.bundle.add_entry(item)
+        if len(self.bundle) >= self.batch_size:
+            self.transmit_bundle()
+
+    def process(self, resources):
+        for r in resources:
+            self.add_entry(r.as_upsert_entry())
+        # catch the last bundle not yet sent
+        self.transmit_bundle()
+
+    def transmit_bundle(self):
+        if len(self.bundle) == 0:
+            return
+
+        fhir_bundle = self.bundle.as_fhir()
+        logging.info(f"  - uploading next bundle to {self.target_system}")
+        response = requests.post(self.target_system, json=fhir_bundle)
+        response.raise_for_status()
+        self.total_sent += len(self.bundle)
+        extra = {'tags': ['upload'], 'system': self.target_system, 'user': 'system'}
+        audit_entry(f"uploaded: {response.json()}", extra=extra)
+
+        # reset internal state for next bundle
+        self.bundle = Bundle()
