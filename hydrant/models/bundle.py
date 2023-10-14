@@ -88,7 +88,18 @@ class BatchUpload(object):
         fhir_bundle = self.bundle.as_fhir()
         logging.info(f"  - uploading next bundle to {self.target_system}")
         response = requests.post(self.target_system, json=fhir_bundle)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as http_err:
+            # at least one item in the bundle generated an unhappy code, track down
+            # the offenders and report
+            for upsert_entry, status_response in zip(fhir_bundle['entry'], response.json()['entry']):
+                if status_response['response']['status'] != "200 OK":
+                    audit_entry(
+                        f"upload error: {status_response['response']['status']}"
+                        f" {status_response['response']['location']}:"
+                        f" {upsert_entry}", level="error")
+            raise http_err
         self.total_sent += len(self.bundle)
         extra = {'tags': ['upload'], 'system': self.target_system, 'user': 'system'}
         audit_entry(f"uploaded: {response.json()}", extra=extra)
