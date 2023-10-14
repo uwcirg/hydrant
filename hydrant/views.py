@@ -149,6 +149,7 @@ def upload_file(filename):
     )
     from hydrant.models.resource_list import ResourceList
 
+    adapter = None
     parser = CSV_Parser(filename)
     headers = set(parser.headers)
 
