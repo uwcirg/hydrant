@@ -93,7 +93,7 @@ class BatchUpload(object):
         except requests.exceptions.HTTPError as http_err:
             # at least one item in the bundle generated an error
             audit_entry(f"response: {response.json()['issue']}", level="error")
-            logging.debug(f"fhir_bundle generated errors: {fhir_bundle}")
+            audit_entry(f"fhir_bundle which generated errors: {fhir_bundle}")
             raise http_err
 
         self.total_sent += len(self.bundle)
