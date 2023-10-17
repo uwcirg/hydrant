@@ -1,4 +1,4 @@
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from hydrant.models.resource import Resource
 
@@ -29,4 +29,4 @@ class Patient(Resource):
             "given": self._fields["name"]["given"][0],
             "birthdate": self._fields["birthDate"],
         }
-        return f"{self.RESOURCE_TYPE}/?{urlencode(search_params)}"
+        return f"{self.RESOURCE_TYPE}/?{urlencode(query=search_params, quote_via=quote)}"

@@ -169,7 +169,9 @@ def upload_file(filename):
 
     # With parser and adapter at hand, process & upload the data
     resources = ResourceList(parser, adapter)
-    batcher = BatchUpload(target_system=current_app.config['FHIR_SERVER_URL'])
+    batcher = BatchUpload(
+            target_system=current_app.config['FHIR_SERVER_URL'],
+            batch_size=current_app.config["UPLOAD_BUNDLE_SIZE"])
     batcher.process(resources)
 
     click.echo(f"  - parsed {len(resources)}")

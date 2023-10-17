@@ -9,6 +9,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # URL scheme to use outside of request context
 PREFERRED_URL_SCHEME = os.getenv("PREFERRED_URL_SCHEME", 'http')
 FHIR_SERVER_URL = os.getenv('FHIR_SERVER_URL')
+UPLOAD_BUNDLE_SIZE = int(os.getenv("UPLOAD_BUNDLE_SIZE", "20"))
 
 # Used to access keycloak db for event log extraction
 DB_VENDOR = os.getenv("DB_VENDOR", "postgres")
